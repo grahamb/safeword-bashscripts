@@ -1,0 +1,17 @@
+#!/bin/bash
+TODAY=`date +%s`
+LASTWEEK=`date -d-7days +%s`
+DBFILE="/var/db/safeword/safewords.sqlite"
+
+# reset the word of the day
+/usr/bin/sqlite3 $DBFILE "UPDATE words SET wordoftheday = NULL"
+
+# pick a new word
+#declare -a POSSIBLE_WORDS
+POSSIBLE_WORDS=(`/usr/bin/sqlite3 $DBFILE "SELECT id FROM words WHERE lastused <= $LASTWEEK"`)
+PW_LENGTH=${#POSSIBLE_WORDS[@]}
+I=$((RANDOM%${PW_LENGTH}))
+WORD_ID=${POSSIBLE_WORDS[$I]}
+`/usr/bin/sqlite3 $DBFILE "UPDATE words SET lastused = $TODAY, wordoftheday=1, usagecount=usagecount+1 WHERE id=$WORD_ID"`
+WORD=`/usr/bin/sqlite3 $DBFILE "SELECT word from words WHERE id = $WORD_ID"`
+echo $WORD

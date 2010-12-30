@@ -1,0 +1,29 @@
+#!/bin/bash
+
+source /usr/local/etc/safetweet.conf
+url="https://api.twitter.com/1/statuses/update.json"
+
+DBFILE="/var/db/safeword/safewords.sqlite"
+DATE=`date +"%B %d"`
+WORD=`/usr/bin/sqlite3 $DBFILE "SELECT word FROM words WHERE wordoftheday=1"`
+VIA=`/usr/bin/sqlite3 $DBFILE "SELECT addedby FROM words WHERE wordoftheday=1"`
+
+declare -a DECORATIONS
+DECORATIONS=("☃" "☂" "☮" "★" "✩" "☁" "☢" "♔" "❉" "☣")
+DECORATIONS_LENGTH=${#DECORATIONS[@]}
+I=$((RANDOM%${DECORATIONS_LENGTH}))
+if [ "$WORD" = "Soviet" ]
+then
+	DECORATION="☭"
+elif [ "$WORD" = "antimicrobial" ] || [ $WORD = "infectious" ]
+then
+	DECORATION="☣"
+else
+	DECORATION=${DECORATIONS[$I]}
+fi
+
+STATUS="The lunchtime safeword for $DATE is: $WORD $DECORATION (via $VIA)"
+LAT="49.279040"
+LONG="-122.914679"
+/usr/local/bin/http_post -h Authorization "$(/usr/local/bin/oauth_sign $consumer_key $consumer_secret $access_token $access_secret POST "$url" \
+display_coordinates='true' lat="$LAT" long="$LONG" status="$STATUS")" "$url" display_coordinates='true' lat="$LAT" long="$LONG" status="$STATUS"
